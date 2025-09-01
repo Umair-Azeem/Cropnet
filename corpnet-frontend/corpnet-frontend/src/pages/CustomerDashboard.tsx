@@ -15,6 +15,7 @@ import {
   CheckCircle,
   MapPin,
   Truck,
+  CreditCard,
   MessageSquare
 } from 'lucide-react';
 import axios from 'axios';
@@ -31,7 +32,7 @@ export default function CustomerDashboard() {
   const { user } = useAuth();
 
   const { toast } = useToast();
-
+ const [paymentMethod, setPaymentMethod] = useState('cash_on_delivery');
   // Mock data
   const products = [
     {
@@ -520,62 +521,109 @@ useEffect(() => {
 
 
 
-            <Dialog open={isResponseDialogOpen} onOpenChange={setIsResponseDialogOpen}>
-              <DialogTrigger asChild>
-                <Button className="w-full">
-                  <ShoppingCart className="h-4 w-4 mr-2" />
-                  Cart Details
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-md">
-                <DialogHeader>
-                  <DialogTitle>Your Items in Cart</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                  {/* Cart Items Table */}
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full text-sm text-left">
-                      <thead className="bg-gray-100">
-                        <tr>
-                          <th className="px-3 py-2">Name</th>
-                          <th className="px-3 py-2">Qty</th>
-                          <th className="px-3 py-2">Description</th>
-                          <th className="px-3 py-2">Price</th>
-                          <th className="px-3 py-2">Total</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {cartItemsInDetail.map(product => (
-                          <tr key={product._id} className="border-b">
-                            <td className="px-3 py-2">{product.name}</td>
-                            <td className="px-3 py-2 text-center">{product.quantity}</td>
-                            <td className="px-3 py-2">{product.description}</td>
-                            <td className="px-3 py-2">Rs. {product.price}</td>
-                            <td className="px-3 py-2">Rs. {product.price * product.quantity}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+          <Dialog open={isResponseDialogOpen} onOpenChange={setIsResponseDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="w-full">
+                <ShoppingCart className="h-4 w-4 mr-2" />
+                View Cart Details ({cartItemsInDetail.length})
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <ShoppingCart className="h-5 w-5" />
+                  Your Shopping Cart
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                {/* Cart Items */}
+                <div className="border rounded-lg">
+                  <div className="grid grid-cols-5 gap-4 p-4 bg-muted/50 font-medium">
+                    <div className="col-span-2">Product</div>
+                    <div>Price</div>
+                    <div>Quantity</div>
+                    <div>Total</div>
                   </div>
+                  {cartItemsInDetail.map(product => (
+                    <div key={product._id} className="grid grid-cols-5 gap-4 p-4 border-t">
+                      <div className="col-span-2">
+                        <div className="font-medium">{product.name}</div>
+                        <div className="text-sm text-muted-foreground line-clamp-1">
+                          {product.description}
+                        </div>
+                      </div>
+                      <div>Rs{product.price}</div>
+                      <div>{product.quantity}</div>
+                      <div className="font-medium">Rs{product.totalPrice}</div>
+                    </div>
+                  ))}
+                </div>
 
-                  {/* Total Price */}
-                  <div className="text-right font-semibold text-base">
-                    Total: Rs.{" "}
-                    {cartItemsInDetail.reduce((sum, item) => sum + item.totalPrice, 0)}
+                {/* Payment Method */}
+                <div className="space-y-3">
+                  <Label>Payment Method</Label>
+                  <div className="flex gap-4">
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="radio"
+                        id="cash_on_delivery"
+                        value="cash_on_delivery"
+                        checked={paymentMethod === 'cash_on_delivery'}
+                        onChange={(e) => setPaymentMethod(e.target.value)}
+                        className="h-4 w-4 text-primary"
+                      />
+                      <Label htmlFor="cash_on_delivery" className="flex items-center gap-2">
+                        <Truck className="h-4 w-4" />
+                        Cash on Delivery
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="radio"
+                        id="online_payment"
+                        value="online_payment"
+                        checked={paymentMethod === 'online_payment'}
+                        onChange={(e) => setPaymentMethod(e.target.value)}
+                        className="h-4 w-4 text-primary"
+                        disabled
+                      />
+                      <Label htmlFor="online_payment" className="flex items-center gap-2 text-muted-foreground">
+                        <CreditCard className="h-4 w-4" />
+                        Online Payment (Not Available)
+                      </Label>
+                    </div>
                   </div>
+                </div>
 
-                  {/* Buttons */}
+                {/* Total and Checkout */}
+                <div className="space-y-3">
+                  <div className="flex justify-between text-lg font-semibold border-t pt-3">
+                    <span>Total Amount:</span>
+                    <span>Rs{cartItemsInDetail.reduce((sum, item) => sum + item.totalPrice, 0)}</span>
+                  </div>
                   <div className="flex gap-2">
-                    <Button onClick={handleCheckout} className="flex-1">
-                      Proceed to checkout
+                    <Button 
+                      onClick={handleCheckout} 
+                      className="flex-1"
+                      disabled={paymentMethod === 'online_payment'}
+                    >
+                      {paymentMethod === 'cash_on_delivery' 
+                        ? 'Proceed with Cash on Delivery'
+                        : 'Select Payment Method'
+                      }
                     </Button>
-                    <Button variant="outline" onClick={() => setIsResponseDialogOpen(false)}>
-                      Cancel
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setIsResponseDialogOpen(false)}
+                    >
+                      Continue Shopping
                     </Button>
                   </div>
                 </div>
-              </DialogContent>
-            </Dialog>
+              </div>
+            </DialogContent>
+          </Dialog>
+        
 
           </div>
 
